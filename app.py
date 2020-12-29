@@ -1,11 +1,33 @@
 from flask import Flask, request
 from flask_restful import Resource, Api
-from models import Pessoas, Atividades
+from models import Pessoas, Atividades, Usuarios
+from flask_httpauth import HTTPBasicAuth
 
+auth = HTTPBasicAuth()
 app = Flask(__name__)
 api = Api(app)
 
+# USUARIOS = {                        Usado para simular a autenticação sem os registros na tabela
+#     'Adilson':'123',
+#     'Rafael':'456',
+# }
+#
+# @auth.verify_password      # Não tem os parenteses por não ser uma função
+# def verificacao(login, senha):
+#     # print('validando usuario')     # Usamos apenas para verificar se está retornando verdadeiro ou falso
+#     # print(USUARIOS.get(login) == senha)
+#     if not (login, senha):
+#         return False
+#     return USUARIOS.get(login) == senha
+
+@auth.verify_password      # Não tem os parenteses por não ser uma função
+def verificacao(login, senha):
+    if not (login, senha):
+        return False
+    return Usuarios.query.filter_by(login=login, senha=senha).first()
+
 class Pessoa(Resource):
+    @auth.login_required   # Não tem os parenteses por não ser uma função apenas impoe a passagem do metodo pelo auth
     def get(self, nome):
         pessoa = Pessoas.query.filter_by(nome=nome).first()
         try:
@@ -43,6 +65,7 @@ class Pessoa(Resource):
         return{'status':'sucesso', 'mensagem' :mensagem}
 
 class ListaPessoas(Resource):
+    @auth.login_required  # Não tem os parenteses por não ser uma função apenas impoe a passagem do metodo pelo auth
     def get(self):
         pessoas = Pessoas.query.all()
         response = [{'id':i.id, 'nome':i.nome, 'idade':i.idade} for i in pessoas]
